@@ -89,7 +89,7 @@ def brand_process():
 
 def main():
     brand_process()
-    port = free_port()
+    port = int(os.environ.get("OUTLINEZ_PORT") or free_port())  # fester Port nur für Tests
     server.start_background(port)
 
     api = Api()

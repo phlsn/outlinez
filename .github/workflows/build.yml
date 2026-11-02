@@ -61,9 +61,40 @@ jobs:
           print("PSD:", len(psd) // 1024, "KB")
           PY
 
+      - name: Test – App starten (Fenster, Server, Modell)
+        working-directory: build/Outlinez.app/Contents/Resources/app
+        run: |
+          export HF_HOME="$DATA/models" HF_HUB_OFFLINE=1 PYTHONPYCACHEPREFIX="$DATA/pycache" OUTLINEZ_LOG=1 OUTLINEZ_PORT=7871
+          "$DATA/venv/bin/python" app.py &
+          PID=$!
+          READY=""
+          for i in $(seq 1 120); do
+            sleep 2
+            kill -0 $PID 2>/dev/null || { echo "App ist abgestürzt"; break; }
+            TOKEN=$(curl -s --max-time 3 http://127.0.0.1:7871/ | sed -n 's/.*const TOKEN = "\([^"]*\)".*/\1/p')
+            [ -n "$TOKEN" ] && STATE=$(curl -s --max-time 3 -H "X-Token: $TOKEN" http://127.0.0.1:7871/api/state)
+            if echo "$STATE" | grep -q '"ready":true'; then READY="nach $((i * 2)) s"; break; fi
+          done
+          echo "Bereit: ${READY:-NEIN}"; echo "Status: ${STATE:0:300}"
+          # Momentaufnahme: Hauptthread muss im Ereignis-Loop warten, nicht in Python-Code hängen
+          sample $PID 3 -file "$RUNNER_TEMP/sample.txt" >/dev/null 2>&1 || true
+          echo "--- Hauptthread ---"; awk '/Thread_[0-9]+.*DispatchQueue_1|com.apple.main-thread/{f=1} f{print} /^ *$/{if(f) exit}' "$RUNNER_TEMP/sample.txt" | head -60
+          echo "--- app.log ---"; cat "$HOME/Library/Application Support/Outlinez/app.log" 2>/dev/null | tail -40
+          kill $PID 2>/dev/null || true
+          test -n "$READY"
+
       - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Diagnose-macOS
+          path: ${{ runner.temp }}/sample.txt
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: Outlinez-macOS
+          if-no-files-found: ignore
           path: dist/*.dmg
 
   windows:

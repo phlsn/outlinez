@@ -52,9 +52,11 @@ def get_model(name: str) -> torch.nn.Module:
         repo, revision, _ = MODELS[name]
         model = AutoModelForImageSegmentation.from_pretrained(repo, revision=revision, trust_remote_code=True)
         _models[name] = model.to(DEVICE, DTYPE).eval()
-        # Erster Durchlauf initialisiert die GPU-Kernel (~2 s), danach geht es schnell.
-        with torch.inference_mode():
-            _models[name](torch.zeros(1, 3, MODELS[name][2], MODELS[name][2], device=DEVICE, dtype=DTYPE))
+        if DEVICE == "cuda":
+            # Erster Durchlauf initialisiert die CUDA-Kernel (~2 s), danach geht es schnell.
+            # Auf Mac/CPU bringt das nichts und kostet mit dem HR-Modell sehr lange.
+            with torch.inference_mode():
+                _models[name](torch.zeros(1, 3, MODELS[name][2], MODELS[name][2], device=DEVICE, dtype=DTYPE))
     return _models[name]
 
 
