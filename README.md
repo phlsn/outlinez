@@ -34,6 +34,26 @@ powershell -ExecutionPolicy Bypass -File build_windows.ps1 -Sign
 Für eine neue Version die `version` in `pyproject.toml` erhöhen und neu bauen; das Setup
 aktualisiert eine bestehende Installation.
 
+## Installer (macOS) und Cloud-Build
+
+Die Mac-Version (`Outlinez-<Version>-macOS-arm64.dmg`, Apple Silicon) baut GitHub Actions
+(`.github/workflows/build.yml`), zusammen mit dem Windows-Setup:
+
+- **Von Hand:** im Repository unter *Actions → Installer bauen → Run workflow*; die Dateien
+  liegen danach unter *Artifacts* des Laufs.
+- **Als Release:** `git tag v1.0.0` und `git push --tags` – der Workflow legt ein GitHub-Release
+  mit DMG und Setup an.
+
+Auf dem Mac: DMG öffnen, Outlinez in „Programme“ ziehen. Beim ersten Start richtet sich die App
+einmalig ein (lädt ca. 2 GB nach `~/Library/Application Support/Outlinez`).
+**Unsigniert** meldet macOS, dass die App nicht überprüft werden kann: unter
+*Systemeinstellungen → Datenschutz & Sicherheit* auf „Trotzdem öffnen“ klicken.
+
+**Signieren** (optional) über Repository-Secrets:
+`MACOS_SIGN_IDENTITY`, `MACOS_NOTARY_APPLE_ID`, `MACOS_NOTARY_PASSWORD`, `MACOS_NOTARY_TEAM_ID`
+(Apple Developer Program; das Zertifikat muss im Schlüsselbund des Build-Macs liegen) sowie
+`WINDOWS_CERT_BASE64` und `WINDOWS_CERT_PASSWORD` für Windows.
+
 ## Funktionen
 
 - Bilder oder ganze Ordner hineinziehen, auswählen oder mit Strg+V einfügen (JPG, PNG, WebP, TIF auch 16 Bit)
