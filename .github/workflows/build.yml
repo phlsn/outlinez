@@ -25,15 +25,19 @@ jobs:
           MACOS_NOTARY_PASSWORD: ${{ secrets.MACOS_NOTARY_PASSWORD }}
           MACOS_NOTARY_TEAM_ID: ${{ secrets.MACOS_NOTARY_TEAM_ID }}
 
-      - name: Test – Ersteinrichtung wie beim ersten Start
+      - name: Test – Ersteinrichtung mit dem echten Fenster (wie beim ersten Start)
         run: |
           RES="$PWD/build/Outlinez.app/Contents/Resources"
           DATA="$RUNNER_TEMP/outlinez-data"; mkdir -p "$DATA"
-          export HF_HOME="$DATA/models" UV_PROJECT_ENVIRONMENT="$DATA/venv" UV_CACHE_DIR="$DATA/uv-cache"
-          export UV_PYTHON="$RES/python/bin/python3" UV_PYTHON_DOWNLOADS=never PYTHONPYCACHEPREFIX="$DATA/pycache"
-          "$RES/python/bin/python3" "$RES/app/firstrun.py" "$RES" "$DATA" --headless
+          export HF_HOME="$DATA/models" UV_PYTHON_DOWNLOADS=never PYTHONPYCACHEPREFIX="$DATA/pycache"
+          # mit Zeitlimit: bleibt das Fenster hängen (wie in 1.0.2), schlägt der Build fehl
+          "$RES/python/bin/python3" -c 'import subprocess, sys; sys.exit(subprocess.run(sys.argv[1:], timeout=1500).returncode)' \
+            "$RES/python/bin/python3" "$RES/app/firstrun.py" "$RES" "$DATA"
           test "$(cat "$DATA/venv/.outlinez-version")" = "$(cat "$RES/VERSION")"
           echo "DATA=$DATA" >> "$GITHUB_ENV"
+      - name: Protokoll der Ersteinrichtung
+        if: always()
+        run: cat "$RUNNER_TEMP/outlinez-data/setup.log" 2>/dev/null || echo "kein Protokoll"
 
       - name: Test – Freistellen und PSD-Export
         working-directory: build/Outlinez.app/Contents/Resources/app

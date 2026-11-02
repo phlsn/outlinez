@@ -1,6 +1,6 @@
 [project]
 name = "outlinez"
-version = "1.0.2"
+version = "1.0.3"
 description = "Lokales Freistellen von Bildern mit BiRefNet"
 requires-python = ">=3.12,<3.13"
 dependencies = [
