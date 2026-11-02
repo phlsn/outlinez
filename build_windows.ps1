@@ -24,12 +24,17 @@ if ($LASTEXITCODE -ne 0) { throw "uv.lock ist nicht aktuell: 'uv lock' ausführe
 # Dateien für die installierte App zusammenstellen
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 New-Item -ItemType Directory -Force "$stage\bin", "$stage\static", "$stage\assets" | Out-Null
-$sources = "app.py", "server.py", "core.py", "effects.py", "export.py", "psd.py", "jobs.py", "paths.py", "cli.py", "setup_models.py",
+$sources = "app.py", "server.py", "core.py", "effects.py", "export.py", "psd.py", "jobs.py", "paths.py", "modelinfo.py",
+           "cli.py", "setup_models.py",
            "pyproject.toml", "uv.lock", "README.md"
 foreach ($f in $sources) { Copy-Item "$root\$f" $stage }
 Copy-Item "$root\static\*" "$stage\static"
 Copy-Item "$root\assets\outlinez.ico" "$stage\assets"
-Copy-Item "$root\installer\setup.cmd", "$root\installer\THIRD-PARTY.txt" $stage
+Copy-Item "$root\installer\setup.cmd", "$root\installer\fetch.py", "$root\installer\THIRD-PARTY.txt" $stage
+
+# Download-Liste für die Ersteinrichtung (mit Größen für Fortschritt und Restzeit)
+cmd /c "uv run --no-project --python 3.12 --with packaging python `"$root\installer\make_manifest.py`" win `"$stage\manifest.json`" 2>&1"
+if ($LASTEXITCODE -ne 0) { throw "Download-Liste konnte nicht erstellt werden" }
 Copy-Item $uv "$stage\bin\uv.exe"
 
 # Python direkt mitliefern: uv würde es sonst beim Installieren laden und dabei eine

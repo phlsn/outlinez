@@ -25,11 +25,7 @@ import torch  # noqa: E402
 import torch.nn.functional as F  # noqa: E402
 from PIL import Image, ImageOps  # noqa: E402
 
-MODELS = {
-    # name: (Hugging-Face-Repo, festgelegte Version, Eingabeauflösung)
-    "standard": ("ZhengPeng7/BiRefNet", "e2bf8e4460fc8fa32bba5ea4d94b3233d367b0e4", 1024),
-    "hr": ("ZhengPeng7/BiRefNet_HR", "a7a562f6fd16021180f2f4348f4de003a2d3d1e1", 2048),
-}
+from modelinfo import MODELS  # noqa: E402
 
 if torch.cuda.is_available():
     DEVICE = "cuda"

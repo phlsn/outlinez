@@ -6,17 +6,15 @@ DATA="$HOME/Library/Application Support/Outlinez"
 mkdir -p "$DATA"
 
 export HF_HOME="$DATA/models"
-export UV_PROJECT_ENVIRONMENT="$DATA/venv"
-export UV_CACHE_DIR="$DATA/uv-cache"
-export UV_PYTHON="$RES/python/bin/python3"
 export UV_PYTHON_DOWNLOADS=never
 export OUTLINEZ_LOG=1
 export PYTHONPYCACHEPREFIX="$DATA/pycache"  # nichts ins signierte App-Paket schreiben
 
-# Ersteinrichtung bzw. nach einem Update: Abhängigkeiten und Modelle laden
+# Ersteinrichtung bzw. nach einem Update: Pakete und Modelle laden (mit Fortschrittsfenster)
 if [ "$(cat "$DATA/venv/.outlinez-version" 2>/dev/null)" != "$(cat "$RES/VERSION")" ]; then
     "$RES/python/bin/python3" "$RES/app/firstrun.py" "$RES" "$DATA" || exit 1
 fi
 
+export HF_HUB_OFFLINE=1  # Modelle sind vollständig da
 cd "$RES/app"
 exec "$DATA/venv/bin/python" "$RES/app/app.py"

@@ -17,8 +17,11 @@ rm -rf build/Outlinez.app build/dmg build/Outlinez.iconset
 mkdir -p "$APP/Contents/MacOS" "$RES/app/static" "$RES/app/assets" "$RES/bin" dist
 
 # App-Dateien
-cp app.py server.py core.py effects.py export.py psd.py jobs.py paths.py cli.py setup_models.py \
-   pyproject.toml uv.lock README.md installer/THIRD-PARTY.txt installer/macos/firstrun.py "$RES/app/"
+cp app.py server.py core.py effects.py export.py psd.py jobs.py paths.py modelinfo.py cli.py setup_models.py \
+   pyproject.toml uv.lock README.md installer/THIRD-PARTY.txt installer/fetch.py installer/macos/firstrun.py "$RES/app/"
+
+# Download-Liste für die Ersteinrichtung (Fortschritt, Rate, Restzeit) und beigelegte Wheels
+uv run --no-project --python 3.12 --with packaging python installer/make_manifest.py mac "$RES/app/manifest.json"
 cp static/* "$RES/app/static/"
 echo "$VERSION" > "$RES/VERSION"
 cp installer/macos/Outlinez "$APP/Contents/MacOS/Outlinez"
@@ -51,7 +54,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundleExecutable</key><string>Outlinez</string>
   <key>CFBundleIconFile</key><string>Outlinez</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>LSMinimumSystemVersion</key><string>12.0</string>
+  <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>NSHighResolutionCapable</key><true/>
 </dict></plist>
 PLIST
