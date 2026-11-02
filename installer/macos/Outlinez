@@ -1,0 +1,22 @@
+#!/bin/bash
+# Startprogramm der Outlinez.app. Laufzeitumgebung und Modelle liegen außerhalb des
+# App-Pakets in ~/Library/Application Support/Outlinez (das Paket selbst bleibt unverändert).
+RES="$(cd "$(dirname "$0")/../Resources" && pwd)"
+DATA="$HOME/Library/Application Support/Outlinez"
+mkdir -p "$DATA"
+
+export HF_HOME="$DATA/models"
+export UV_PROJECT_ENVIRONMENT="$DATA/venv"
+export UV_CACHE_DIR="$DATA/uv-cache"
+export UV_PYTHON="$RES/python/bin/python3"
+export UV_PYTHON_DOWNLOADS=never
+export OUTLINEZ_LOG=1
+export PYTHONPYCACHEPREFIX="$DATA/pycache"  # nichts ins signierte App-Paket schreiben
+
+# Ersteinrichtung bzw. nach einem Update: Abhängigkeiten und Modelle laden
+if [ "$(cat "$DATA/venv/.outlinez-version" 2>/dev/null)" != "$(cat "$RES/VERSION")" ]; then
+    "$RES/python/bin/python3" "$RES/app/firstrun.py" "$RES" "$DATA" || exit 1
+fi
+
+cd "$RES/app"
+exec "$DATA/venv/bin/python" "$RES/app/app.py"

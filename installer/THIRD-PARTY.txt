@@ -1,0 +1,14 @@
+Outlinez verwendet unter anderem folgende Open-Source-Komponenten:
+
+- BiRefNet (Modell und Code), MIT-Lizenz – https://github.com/ZhengPeng7/BiRefNet
+- PyTorch, BSD-3-Clause – https://pytorch.org
+- Hugging Face Transformers / Hub, Apache-2.0 – https://github.com/huggingface
+- uv, MIT / Apache-2.0 – https://github.com/astral-sh/uv
+- pywebview, BSD-3-Clause – https://pywebview.flowrl.com
+- FastAPI, Starlette, Uvicorn, MIT / BSD-3-Clause
+- Pillow (MIT-CMU), NumPy (BSD-3-Clause), OpenCV (Apache-2.0)
+- psd-tools, MIT – https://github.com/psd-tools/psd-tools
+- watchdog, Apache-2.0
+
+Die Komponenten werden bei der Ersteinrichtung aus den offiziellen Quellen geladen
+(PyPI, download.pytorch.org, huggingface.co, python-build-standalone).

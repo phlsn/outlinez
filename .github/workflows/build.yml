@@ -1,0 +1,105 @@
+# Baut die Installer für macOS und Windows.
+# Start: in GitHub unter "Actions" > "Installer bauen" > "Run workflow",
+# oder automatisch mit einem Versions-Tag (git tag v1.0.0 && git push --tags) inkl. Release.
+name: Installer bauen
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  macos:
+    runs-on: macos-14  # Apple Silicon
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.9"
+
+      - name: App und DMG bauen
+        run: bash build_macos.sh
+        env:
+          MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+          MACOS_NOTARY_APPLE_ID: ${{ secrets.MACOS_NOTARY_APPLE_ID }}
+          MACOS_NOTARY_PASSWORD: ${{ secrets.MACOS_NOTARY_PASSWORD }}
+          MACOS_NOTARY_TEAM_ID: ${{ secrets.MACOS_NOTARY_TEAM_ID }}
+
+      - name: Test – Ersteinrichtung wie beim ersten Start
+        run: |
+          RES="$PWD/build/Outlinez.app/Contents/Resources"
+          DATA="$RUNNER_TEMP/outlinez-data"; mkdir -p "$DATA"
+          export HF_HOME="$DATA/models" UV_PROJECT_ENVIRONMENT="$DATA/venv" UV_CACHE_DIR="$DATA/uv-cache"
+          export UV_PYTHON="$RES/python/bin/python3" UV_PYTHON_DOWNLOADS=never PYTHONPYCACHEPREFIX="$DATA/pycache"
+          "$RES/python/bin/python3" "$RES/app/firstrun.py" "$RES" "$DATA" --headless
+          test "$(cat "$DATA/venv/.outlinez-version")" = "$(cat "$RES/VERSION")"
+          echo "DATA=$DATA" >> "$GITHUB_ENV"
+
+      - name: Test – Freistellen und PSD-Export
+        working-directory: build/Outlinez.app/Contents/Resources/app
+        run: |
+          export HF_HOME="$DATA/models" HF_HUB_OFFLINE=1 PYTHONPYCACHEPREFIX="$DATA/pycache"
+          "$DATA/venv/bin/python" - <<'PY'
+          import time
+          from PIL import Image, ImageDraw
+          import core, export, jobs, server  # noqa: F401  (Importe wie in der App)
+          img = Image.new("RGB", (900, 900), (236, 233, 226))
+          ImageDraw.Draw(img).ellipse((280, 200, 620, 700), fill=(200, 40, 30))
+          print("Gerät:", core.device_name())
+          t = time.time()
+          cut = core.remove_background(img, "standard")
+          print(f"Freigestellt in {time.time() - t:.1f} s")
+          a = cut.getchannel("A")
+          print("Alpha Mitte/Ecke:", a.getpixel((450, 450)), a.getpixel((20, 20)))
+          assert a.getpixel((450, 450)) > 200 and a.getpixel((20, 20)) < 30, "Freistellung falsch"
+          psd = export.encode(img, cut, export.Options.from_settings({"format": "psd", "shadow": {"kind": "ground"}}))
+          assert psd[:4] == b"8BPS", "PSD ungültig"
+          print("PSD:", len(psd) // 1024, "KB")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Outlinez-macOS
+          path: dist/*.dmg
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.9"
+      - name: Inno Setup installieren
+        run: choco install innosetup -y --no-progress
+      - name: Installer bauen
+        shell: powershell
+        run: |
+          if ($env:WINDOWS_CERT_BASE64) {
+            [IO.File]::WriteAllBytes("$env:RUNNER_TEMP\cert.pfx", [Convert]::FromBase64String($env:WINDOWS_CERT_BASE64))
+            $env:OUTLINEZ_CERT = "$env:RUNNER_TEMP\cert.pfx"
+            .\build_windows.ps1 -Sign
+          } else {
+            .\build_windows.ps1
+          }
+        env:
+          WINDOWS_CERT_BASE64: ${{ secrets.WINDOWS_CERT_BASE64 }}
+          OUTLINEZ_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Outlinez-Windows
+          path: dist/*.exe
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [macos, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
