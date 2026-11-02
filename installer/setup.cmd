@@ -10,7 +10,9 @@ set "UV_CACHE_DIR=%~dp0.uv-cache"
 set "HF_HUB_DISABLE_PROGRESS_BARS=1"
 
 echo Lade Komponenten (ca. 3 GB) ...
-"%~dp0bin\uv.exe" sync --frozen --no-progress || exit /b 1
+"%~dp0bin\uv.exe" sync --frozen --no-progress --compile-bytecode || exit /b 1
+rem App-Dateien vorkompilieren: in Program Files kann Python das spaeter nicht selbst
+"%~dp0python\python.exe" -m compileall -q -l "%~dp0." >nul
 "%~dp0bin\uv.exe" cache clean >nul 2>&1
 
 echo Lade KI-Modelle (ca. 1,8 GB) ...

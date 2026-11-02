@@ -5,10 +5,16 @@ import os
 import threading
 from pathlib import Path
 
+from paths import cache_dir  # noqa: E402
+
 ROOT = Path(__file__).parent
 if (ROOT / ".installed").exists():
-    # Installierte App: Modelle liegen im App-Ordner und werden bei der Deinstallation mit entfernt
+    # Installierte App: Modelle liegen (nur lesbar) im App-Ordner und werden bei der Deinstallation
+    # mit entfernt. Der Installer hat sie geladen, also nichts nachladen. Den Modell-Code kopiert
+    # transformers beim Laden in einen Ordner, der beschreibbar sein muss.
     os.environ.setdefault("HF_HOME", str(ROOT / "models"))
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("HF_MODULES_CACHE", str(cache_dir() / "hf-modules"))
 os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
 # Mac: Operationen ohne MPS-Kernel (z. B. deform_conv2d in BiRefNet) laufen dann auf dem Prozessor
 os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")

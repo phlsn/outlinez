@@ -13,10 +13,14 @@ AppName=Outlinez
 AppVersion={#AppVersion}
 AppVerName=Outlinez {#AppVersion}
 AppPublisher=Outlinez
-DefaultDirName={localappdata}\Programs\Outlinez
+DefaultDirName={autopf}\Outlinez
 DisableProgramGroupPage=yes
 DisableDirPage=auto
-PrivilegesRequired=lowest
+; Standard: für alle Benutzer nach Program Files (Adminrechte). Ohne Adminrechte kann im
+; Setup „nur für mich“ gewählt werden, dann landet alles in %LOCALAPPDATA%\Programs.
+PrivilegesRequired=admin
+PrivilegesRequiredOverridesAllowed=dialog commandline
+UsedUserAreasWarning=no
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=..\dist
@@ -62,8 +66,8 @@ Name: "{autoprograms}\Outlinez"; Filename: "{app}\.venv\Scripts\pythonw.exe"; Pa
 Name: "{autodesktop}\Outlinez"; Filename: "{app}\.venv\Scripts\pythonw.exe"; Parameters: """{app}\app.py"""; WorkingDir: "{app}"; IconFilename: "{app}\assets\outlinez.ico"; AppUserModelID: "Outlinez.App"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\.venv\Scripts\pythonw.exe"; Parameters: """{app}\app.py"""; WorkingDir: "{app}"; Description: "{cm:Launch}"; Flags: postinstall nowait skipifsilent
-Filename: "https://developer.microsoft.com/microsoft-edge/webview2/"; Flags: shellexec postinstall skipifsilent; Check: not HasWebView2
+Filename: "{app}\.venv\Scripts\pythonw.exe"; Parameters: """{app}\app.py"""; WorkingDir: "{app}"; Description: "{cm:Launch}"; Flags: postinstall nowait skipifsilent runasoriginaluser
+Filename: "https://developer.microsoft.com/microsoft-edge/webview2/"; Flags: shellexec postinstall skipifsilent runasoriginaluser; Check: not HasWebView2
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\.venv"

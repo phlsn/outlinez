@@ -3,10 +3,13 @@
 uv run setup_models.py [standard] [hr]   (ohne Angabe: beide)
 """
 
+import os
 import sys
 
-import core  # setzt HF_HOME für die installierte App
-from huggingface_hub import snapshot_download
+os.environ["HF_HUB_OFFLINE"] = "0"  # die installierte App läuft offline, hier wird aber geladen
+
+import core  # noqa: E402  (setzt HF_HOME für die installierte App)
+from huggingface_hub import snapshot_download  # noqa: E402
 
 
 def main():
