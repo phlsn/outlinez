@@ -131,10 +131,18 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
+          pattern: Outlinez-*
           path: dist
           merge-multiple: true
+      - name: Kopien ohne Versionsnummer (für feste Download-Links in der README)
+        run: |
+          cp dist/Outlinez-Setup-*.exe dist/Outlinez-Setup-Windows.exe
+          cp dist/Outlinez-*-macOS-arm64.dmg dist/Outlinez-macOS-arm64.dmg
       - uses: softprops/action-gh-release@v2
         with:
+          name: Outlinez ${{ github.ref_name }}
+          body_path: installer/RELEASE_NOTES.md
           files: dist/*

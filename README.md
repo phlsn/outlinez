@@ -4,7 +4,22 @@ Lokaler Ersatz für remove.bg: entfernt Bildhintergründe mit dem Open-Source-Mo
 [BiRefNet](https://github.com/ZhengPeng7/BiRefNet) (MIT-Lizenz, auch kommerziell nutzbar).
 Alles läuft auf diesem Rechner, keine Bilder verlassen ihn.
 
-## Starten
+## Download
+
+| System | Direkt-Download (neueste Version) | Voraussetzungen |
+|---|---|---|
+| **Windows** | [Outlinez-Setup-Windows.exe](https://github.com/phlsn/outlinez/releases/latest/download/Outlinez-Setup-Windows.exe) | Windows 10/11, 64 Bit; schnell mit NVIDIA-Grafikkarte |
+| **macOS** | [Outlinez-macOS-arm64.dmg](https://github.com/phlsn/outlinez/releases/latest/download/Outlinez-macOS-arm64.dmg) | Mac mit Apple-Chip (M1–M4), macOS 14 oder neuer |
+
+Alle Versionen und Hinweise: [Releases](https://github.com/phlsn/outlinez/releases).
+Bei der Installation bzw. beim ersten Start werden einmalig Komponenten und KI-Modelle geladen
+(Windows ca. 3,8 GB, Mac ca. 1,1 GB), danach läuft Outlinez offline.
+
+- **Windows:** Bei „Der Computer wurde durch Windows geschützt“ auf *Weitere Informationen* → *Trotzdem ausführen*.
+- **macOS:** DMG öffnen, Outlinez in *Programme* ziehen; beim ersten Öffnen
+  *Systemeinstellungen → Datenschutz & Sicherheit → Trotzdem öffnen*.
+
+## Entwicklung: Starten aus dem Quellcode
 
 - **App:** Verknüpfung „Outlinez“ auf dem Desktop oder im Startmenü. Eigenes Fenster, keine Konsole.
   Verknüpfungen neu anlegen: `uv run install.py` (entfernen: `uv run install.py --remove`)
