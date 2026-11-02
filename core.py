@@ -66,6 +66,32 @@ def device_name() -> str:
     return "Apple-Grafikeinheit (MPS)" if DEVICE == "mps" else "Prozessor (ohne GPU, langsamer)"
 
 
+def memory_gb() -> float:
+    """Arbeitsspeicher des Rechners in GB."""
+    if os.name == "nt":
+        import ctypes
+
+        class MemoryStatus(ctypes.Structure):
+            _fields_ = [("length", ctypes.c_ulong), ("load", ctypes.c_ulong), ("total", ctypes.c_ulonglong),
+                        ("avail", ctypes.c_ulonglong), ("total_page", ctypes.c_ulonglong),
+                        ("avail_page", ctypes.c_ulonglong), ("total_virtual", ctypes.c_ulonglong),
+                        ("avail_virtual", ctypes.c_ulonglong), ("avail_ext", ctypes.c_ulonglong)]
+
+        status = MemoryStatus(length=ctypes.sizeof(MemoryStatus))
+        ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status))
+        return status.total / 1024**3
+    return os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / 1024**3
+
+
+HR_MIN_MEMORY_GB = 15.5  # "16 GB"-Rechner melden etwas weniger
+
+
+def hr_supported() -> bool:
+    """Das HR-Modell (2048 px) braucht ohne NVIDIA-Karte sehr viel Arbeitsspeicher; mit 8 GB
+    lagert das System so stark aus, dass die App einfriert."""
+    return DEVICE == "cuda" or memory_gb() >= HR_MIN_MEMORY_GB
+
+
 def read_image(source: str | Path | bytes) -> Image.Image:
     """Liest JPG/PNG/WebP/TIF (auch 16 Bit und CMYK) als 8-Bit-RGB."""
     data = source if isinstance(source, bytes) else Path(source).read_bytes()
@@ -146,9 +172,12 @@ def _run(img: Image.Image, model_name: str, refine: bool, device: str) -> np.nda
 
 
 def remove_background(img: Image.Image, model_name: str = "standard", refine: bool = True) -> Image.Image:
+    # Auf dem Mac teilen sich GPU und System den Speicher: dort nur das Modell auf der GPU,
+    # die Kantenbereinigung in voller Bildgröße auf dem Prozessor.
+    refine_device = "cpu" if DEVICE == "mps" else DEVICE
     with _lock:
         try:
-            arr = _run(img, model_name, refine, DEVICE)
+            arr = _run(img, model_name, refine, refine_device)
         except torch.OutOfMemoryError:
             # Sehr große Bilder: Maske auf der GPU, Kantenbereinigung im RAM.
             torch.cuda.empty_cache()
@@ -156,5 +185,7 @@ def remove_background(img: Image.Image, model_name: str = "standard", refine: bo
         finally:
             if DEVICE == "cuda":
                 torch.cuda.empty_cache()
+            elif DEVICE == "mps":
+                torch.mps.empty_cache()
     return Image.fromarray(arr, "RGBA")
 

@@ -69,6 +69,9 @@ class Manager:
             self.settings.update({k: v for k, v in saved.items() if k in self.settings})
         except (OSError, ValueError):
             pass
+        self.hr_supported = core.hr_supported()
+        if not self.hr_supported:
+            self.settings["model"] = "standard"
         self._observer = None
         threading.Thread(target=self._worker, daemon=True).start()
 
@@ -78,6 +81,8 @@ class Manager:
             for k, v in changes.items():
                 if k == "shadow" and isinstance(v, dict):
                     self.settings["shadow"] = {**self.settings["shadow"], **v}
+                elif k == "model" and v == "hr" and not self.hr_supported:
+                    continue  # zu wenig Arbeitsspeicher, siehe core.hr_supported
                 elif k in self.settings:
                     self.settings[k] = v
             self.rev += 1
@@ -272,4 +277,5 @@ class Manager:
         with self.lock:
             return {"rev": self.rev, "ready": self.ready, "load_error": self.load_error,
                     "device": core.device_name(), "settings": self.settings,
+                    "hr_supported": self.hr_supported, "memory_gb": round(core.memory_gb()),
                     "jobs": [j.public() for j in self.jobs.values()]}

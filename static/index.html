@@ -150,6 +150,7 @@
   .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--bg); border-radius: 8px; padding: 3px; gap: 3px; }
   .seg button { border: 0; background: transparent; border-radius: 6px; padding: 6px 2px; color: var(--muted); font-size: 13px; }
   .seg button[aria-pressed="true"] { background: var(--panel); color: var(--ink); box-shadow: var(--shadow); font-weight: 600; }
+  .seg button:disabled { opacity: .4; cursor: not-allowed; }
   .hint { color: var(--muted); font-size: 12px; margin: 7px 0 0; }
   .row { display: flex; align-items: center; gap: 10px; margin-top: 9px; }
   .row > label { flex: 1; }
@@ -344,6 +345,7 @@ const MODEL_HINTS = {
 const SHADOW_DEFAULT_ANGLE = { drop: 45, perspective: 300 };
 
 let S = null;          // Einstellungen vom Server
+let SYS = { hr_supported: true, memory_gb: 0 };  // Fähigkeiten des Rechners
 let jobs = [];
 let rev = -1;
 const cards = new Map();
@@ -428,7 +430,10 @@ function syncUI() {
   const get = (k) => k.split(".").reduce((o, p) => o[p], S);
   for (const seg of document.querySelectorAll(".seg[data-key]"))
     for (const b of seg.querySelectorAll("button")) b.setAttribute("aria-pressed", b.dataset.value === get(seg.dataset.key));
-  $("#modelHint").textContent = MODEL_HINTS[S.model];
+  const hrButton = document.querySelector('.seg[data-key="model"] [data-value="hr"]');
+  hrButton.disabled = !SYS.hr_supported;
+  $("#modelHint").textContent = SYS.hr_supported ? MODEL_HINTS[S.model]
+    : `Hochauflösend braucht ohne NVIDIA-Grafikkarte mindestens 16 GB Arbeitsspeicher (dieser Rechner: ${SYS.memory_gb} GB).`;
   $("#colorRow").hidden = S.bg !== "color";
   $("#colorInput").value = S.color;
   for (const s of $("#swatches").children) s.setAttribute("aria-pressed", s.dataset.color.toLowerCase() === S.color.toLowerCase());
@@ -529,6 +534,7 @@ async function poll() {
     $("#status").textContent = st.load_error ? `Modell-Fehler: ${st.load_error}`
       : st.ready ? `${st.device} · läuft lokal` : "Modell wird geladen …";
     if (!S || !Object.keys(pending).length) S = st.settings;
+    SYS = { hr_supported: st.hr_supported, memory_gb: st.memory_gb };
     if (st.rev !== rev) { rev = st.rev; jobs = st.jobs; renderJobs(); }
     syncUI();
     const busy = !st.ready || jobs.some((j) => j.status === "queued" || j.status === "processing");
