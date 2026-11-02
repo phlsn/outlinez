@@ -23,7 +23,8 @@ SETTINGS_FILE = CONFIG_DIR / "settings.json"
 LEGACY_SETTINGS = CONFIG_DIR.parent / "Freisteller" / "settings.json"  # bis zur Umbenennung in Outlinez
 
 APP_DEFAULTS = {
-    "model": "hr",
+    # HR (2048 px) nur mit NVIDIA-Karte als Standard; auf Mac/CPU ist es sehr speicher- und zeithungrig
+    "model": "hr" if core.DEVICE == "cuda" else "standard",
     "out_mode": "beside",  # beside | folder
     "out_dir": "",
     "watch_dir": "",
