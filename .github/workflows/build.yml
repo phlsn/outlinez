@@ -10,7 +10,7 @@ on:
 
 jobs:
   macos:
-    runs-on: macos-14  # Apple Silicon
+    runs-on: macos-15  # Apple Silicon (macos-14 hat GitHub abgeschaltet; Mindestversion der App bleibt macOS 14)
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
