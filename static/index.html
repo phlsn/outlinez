@@ -532,7 +532,8 @@ async function poll() {
     const st = await api("/api/state");
     $("#status").className = "status " + (st.load_error ? "err" : st.ready ? "ok" : "");
     $("#status").textContent = st.load_error ? `Modell-Fehler: ${st.load_error}`
-      : st.ready ? `${st.device} · läuft lokal` : "Modell wird geladen …";
+      : st.ready ? `${st.device} · läuft lokal`
+      : `Modell wird geladen · ${st.load_step} (${st.load_seconds} s)`;
     if (!S || !Object.keys(pending).length) S = st.settings;
     SYS = { hr_supported: st.hr_supported, memory_gb: st.memory_gb };
     if (st.rev !== rev) { rev = st.rev; jobs = st.jobs; renderJobs(); }

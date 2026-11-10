@@ -43,18 +43,26 @@ _lock = threading.Lock()
 Image.MAX_IMAGE_PIXELS = 300_000_000
 
 
-def get_model(name: str) -> torch.nn.Module:
+MODEL_LABELS = {"standard": "Standard", "hr": "Hochauflösend"}
+
+
+def get_model(name: str, progress=lambda text: None) -> torch.nn.Module:
+    """progress(text) meldet den gerade laufenden Ladeschritt (für die Statuszeile)."""
     if name not in MODELS:
         raise ValueError(f"Unbekanntes Modell: {name} (verfügbar: {', '.join(MODELS)})")
     if name not in _models:
+        progress("KI-Bibliotheken werden geladen …")
         from transformers import AutoModelForImageSegmentation
 
         repo, revision, _ = MODELS[name]
+        progress(f"KI-Modell „{MODEL_LABELS[name]}“ wird von der Festplatte gelesen …")
         model = AutoModelForImageSegmentation.from_pretrained(repo, revision=revision, trust_remote_code=True)
+        progress("Modell wird auf die Grafikkarte übertragen …" if DEVICE != "cpu" else "Modell wird vorbereitet …")
         _models[name] = model.to(DEVICE, DTYPE).eval()
         if DEVICE == "cuda":
             # Erster Durchlauf initialisiert die CUDA-Kernel (~2 s), danach geht es schnell.
             # Auf Mac/CPU bringt das nichts und kostet mit dem HR-Modell sehr lange.
+            progress("Grafikkarte wird vorbereitet …")
             with torch.inference_mode():
                 _models[name](torch.zeros(1, 3, MODELS[name][2], MODELS[name][2], device=DEVICE, dtype=DTYPE))
     return _models[name]

@@ -62,6 +62,8 @@ class Manager:
         self.rev = 0                 # steigt bei jeder Änderung, damit die Oberfläche neu lädt
         self.ready = False
         self.load_error = None
+        self.load_step = "Starte …"          # aktueller Ladeschritt für die Statuszeile
+        self.load_started = time.time()
         self.settings = {**export.DEFAULTS, **APP_DEFAULTS}
         try:
             source = SETTINGS_FILE if SETTINGS_FILE.exists() else LEGACY_SETTINGS
@@ -141,8 +143,13 @@ class Manager:
 
     # ---------- Verarbeitung ----------
     def load_model(self):
+        def progress(text):
+            with self.lock:
+                self.load_step = text
+                self.rev += 1
+
         try:
-            core.get_model(self.settings["model"])
+            core.get_model(self.settings["model"], progress)
             self.ready = True
         except Exception as e:
             self.load_error = str(e)
@@ -276,6 +283,7 @@ class Manager:
     def state(self) -> dict:
         with self.lock:
             return {"rev": self.rev, "ready": self.ready, "load_error": self.load_error,
+                    "load_step": self.load_step, "load_seconds": int(time.time() - self.load_started),
                     "device": core.device_name(), "settings": self.settings,
                     "hr_supported": self.hr_supported, "memory_gb": round(core.memory_gb()),
                     "jobs": [j.public() for j in self.jobs.values()]}
